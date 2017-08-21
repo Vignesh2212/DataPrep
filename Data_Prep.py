@@ -29,24 +29,24 @@ class bivarGen(object):
         self.maxCatCutoff = 30
         self.cwdConfimation = 0
         self.bivarKeepMissing = 0
-        
+
     #Constructor for setting some name about the dataset.
     def setDSName(self,DSName):
         self.DSName = DSName
-        
+
     #Set project folder for storing bivariate pdfs to avoid clutter
     def setCurrentDir(self,newDir):
         self.oldDir = os.getcwd()
         os.chdir(newDir)
-    
+
     #Use this method to revert working directory to old one, if available
     def revertDir(self):
         if self.oldDir != "":
             os.chdir(self.oldDir)
         else:
             print("No old working directory available to revert to")
-    
-    #By default, input dataset is overwrite protected. 
+
+    #By default, input dataset is overwrite protected.
     #call this constructor to overwrite any dataset.
     #Once a dataset is overwritten, it is overwrite protected again
     def setOverWrite(self, overWrite):
@@ -55,7 +55,7 @@ class bivarGen(object):
             return
         self.overWrite = overWrite
         print("Data is not overwrite protected")
-        
+
     def setTargetVarName(self,targetVarName):
         if self.DFCreated == 0:
             print("Please upload input dataset before setting target")
@@ -75,7 +75,7 @@ class bivarGen(object):
 #                    self.inpDF[targetVarName] = pandas.get_dummies(test["oldTargetVarName"], drop_first=True)
 #                self.inpSanityCheck = 1
         self.uniqueTgtCount = self.inpDF.groupby(targetVarName)[targetVarName].nunique().sum()
-    
+
     def setPlotOneTgtClass(self,plotOneTgtClass):
         if not self.inpSanityCheck:
             print("Please set input dataframe and target variable first")
@@ -86,10 +86,10 @@ class bivarGen(object):
         else:
             self.plotOneTgtClass = 0
             print("Plotting all target classes")
-                
-    
+
+
     #Exception handling and sanity checks on the dataframe created needs to be created
-    
+
     #Constructor for uploading CSV. By default header is present, set to "N" for no header.
     def uploadCSV(self,CSVPath, headerPresent = "Y"):
         #Check overwrite protect on existing dataset
@@ -105,8 +105,9 @@ class bivarGen(object):
         self.varListInpDF = list(self.inpDF.columns.values)
         self.DFCreated = 1
         print("CSV upload successful")
+        self._stripDF()
         self.overWrite = 0
-        
+
     #Constructor for uploading an existing pandas dataframe
     def uploadDF(self,inpDF):
         #Check overwrite protect on existing dataset
@@ -118,9 +119,16 @@ class bivarGen(object):
         self.varListInpDF = list(self.inpDF.columns.values)
         self.DFCreated = 1
         print("Data upload successful")
+        self._stripDF()
         self.overWrite = 0
-            
-        
+
+    def _stripDF(self):
+        #Strip column names to remove whitespace
+        self.inpDF.columns = [w.strip() for w in self.inpDF.columns.values]
+        #Strip whitespace in column values
+        self.inpDF = self.inpDF.applymap(lambda x:x.strip() if type(x) is str else x)
+
+
     #Preserve continuous variables distribution - 1/0. Default - 0
     def setPreserveContDist(self,preserveContDist):
         if type(preserveContDist) is not int and (preserveContDist != 0 or preserveContDist != 1):
@@ -131,7 +139,7 @@ class bivarGen(object):
             print("Distribution of continuous variable will be preserved")
         else:
             print("Continuous variable will be split into %s equal parts"%self.numBins)
-    
+
     #Set number of bins for splitting continuous variables
     def setNumBins(self,numBins):
         if type(numBins) is not int:
@@ -142,16 +150,16 @@ class bivarGen(object):
             return
         self.numBins = numBins
         print("Number of bins changed to %s"%self.numBins)
-            
-    
-    #Set how much portion of continuous data outlier to be cut before bucketing it. 
+
+
+    #Set how much portion of continuous data outlier to be cut before bucketing it.
     #This avoids outliers influencing the buckets.
     def setQuantileCut(self,quantileCut):
         if (type(quantileCut) is not int) and quantileCut <= 1:
             self.quantileCut = min(quantileCut,1-quantileCut)
         else:
             print("Quantile cut seems to be invalid. Reverting to default value of 0.05")
-        
+
     #Set maximum categories till when bivariate shall be safely performed. Set to 30 by default
     def setMaxCatCutoff(self,maxCat):
         if type(maxCat) is not float and type(maxCat) is not int:
@@ -162,7 +170,7 @@ class bivarGen(object):
             return
         self.maxCatCutoff = maxCat
         print("Maxmimum category cut off changed")
-        
+
     #Treat missing in bivar. Default - 0(No)
     def setBivarKeepMissing(self,bivarKeepMissing):
         if type(bivarKeepMissing) is not int:
@@ -173,16 +181,16 @@ class bivarGen(object):
             return
         self.bivarKeepMissing = bivarKeepMissing
         print("Missing values will be retained in bivariate")
-    
+
     #Create bivariate
     #If varlist is empty, bivariate will be created for all independent var
-    #If not empty, varlist needs to be a list of input variables. 
+    #If not empty, varlist needs to be a list of input variables.
     def createBivar(self,varList=[]):
         #Check if target variable set
         if self.targetVarName == "":
             print("Target variable name not set. Please set target variable name")
             return
-        
+
         #Display working directory and get confirmation from user
         #Would help if saving image or pdf of plots
         #Prompt only once
@@ -193,8 +201,8 @@ class bivarGen(object):
                 print("Please use method setCurrentDir to set intended directory")
                 return
             self.cwdConfimation = 1
-        
-        #Check if bivariate needs to be performed for all variables. 
+
+        #Check if bivariate needs to be performed for all variables.
         #This may be time consuming and could be avoided at this step
         #Check also if it is a list, otherwise stop exec
         if varList == []:
@@ -208,7 +216,7 @@ class bivarGen(object):
                 print(type(varList))
                 print('Entered arg is not list, stopping execution')
                 return
-            
+
         #For each variable in varList, create bivariate
         for varName in varList:
             if varName != self.targetVarName:
@@ -298,11 +306,11 @@ class bivarGen(object):
                             else:
                                 binLabel.append(str(prevAppendVal)+' -- '+str(appendVal))
                             prevAppendVal = appendVal
-                            
+
                         bins.append(maxValToSet)
                         binLabel.append(str(prevAppendVal)+' -- '+"max")
                         del self.inpDF[varNameRank]
-                        
+
                     #Set bins to the bin min max range. This categorical variable will be used to plot bivariate
                     binValues = pandas.cut(self.inpDF[varName], bins, labels=binLabel)
                     varNameBins = varName + "_bin"
@@ -340,8 +348,8 @@ class bivarGen(object):
                 print("Please use method setCurrentDir to set intended directory")
                 return
             self.cwdConfimation = 1
-        
-        #Check if univariate needs to be performed for all variables. 
+
+        #Check if univariate needs to be performed for all variables.
         #This may be time consuming and could be avoided at this step
         #Check also if it is a list, otherwise stop exec
         if varList == []:
@@ -356,22 +364,22 @@ class bivarGen(object):
                 print('Entered arg is not list, stopping execution')
                 return
             univarSingleVar = 1
-            
-        #Check if all univariate stats needs to be performed or specified. 
+
+        #Check if all univariate stats needs to be performed or specified.
         #Check also if it is a list, otherwise stop exec
         if reqStatsList != []:
             if type(reqStatsList) is not list:
                 print('Entered arg is not list, stopping execution')
                 return
-            
+
             if any("Missing_Stats" in dUmmy for dUmmy in reqStatsList):
                 self._createMissingStats(varList);
                 univarReqStats = 1
-                
+
             if any("Univariate_Stats" in dUmmy for dUmmy in reqStatsList):
                 self._createUnivarStats(varList);
                 univarReqStats = 1
-            
+
             if any("Univarite_Plot" in dUmmy for dUmmy in reqStatsList):
                 #createUnivarPlot(varList);
                 univarReqStats = 1
@@ -383,10 +391,10 @@ class bivarGen(object):
             self._createMissingStats(varList)
             self._createUnivarStats(varList)
             #_createUnivarPlot(varList)
-            
+
             #Code all necessary subs
-                
-    #Only called inside the class. This ensures all sanity check done and no untoward error is thrown. 
+
+    #Only called inside the class. This ensures all sanity check done and no untoward error is thrown.
     #Create missing data statistics for the requested list of variables
     def _createMissingStats(self,varList):
         #For each variable in varList, create missing variable report
@@ -396,7 +404,7 @@ class bivarGen(object):
         varIndex = 1
         #Create an empty report dataframe
         missingReport = pandas.DataFrame()
-        
+
         for varName in varList:
             #Get number of missing values for the variable
             numMissing = np.sum(pandas.isnull(self.inpDF[varName]))
@@ -427,32 +435,32 @@ class bivarGen(object):
                                                  },columns=['Variable Name',
             'Count'],index=[2]))
             missingPlot.plot(x='Variable Name',y='Count',kind='bar')
-            
+
         print('Total records in the input dataframe: %s' %DFRowCount)
-            
+
         print("Missing data report for the requested columns: ")
         print(missingReport)
-        
+
     def _createUnivarStats(self,varListInp):
         #Create an empty report dataframe
         univarReport = pandas.DataFrame()
         varList = list()
-        
+
         #modeReport = self.inpDF[[varListInp]].astype('str').mode().fillna(value = '-').transpose()
-        
+
         for varName in varListInp:
             if self.inpDF[varName].dtype != np.int64 and self.inpDF[varName].dtype != np.float64:
                 print("Can't process descriptive statistics for categorical data: %s" %varName)
             else:
                 varList.append(varName)
-                
+
         varList = list(set(varList))
         if len(varList) == 0:
             print('No variables to perform descriptive statistics')
             return
-        
+
         inpDFCut = self.inpDF[varList]
-        
+
         #Get descriptive stats
         #Keep only one of the mode values
         #Mean
@@ -490,3 +498,7 @@ class bivarGen(object):
         univarReport = pandas.concat([meanDF,modeDF,varianceDF,stdDF,quantileDF],axis=1)
         print("Descriptive Statistics for the requested columns: ")
         print(univarReport)
+
+    def removeMultiCollinearity(self):
+        thresholdVIF = 5.0
+        numColumns =
