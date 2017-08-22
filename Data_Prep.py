@@ -119,7 +119,7 @@ class bivarGen(object):
         self.varListInpDF = list(self.inpDF.columns.values)
         self.DFCreated = 1
         print("Data upload successful")
-        self._stripDF()
+        #self._stripDF()
         self.overWrite = 0
 
     def _stripDF(self):
